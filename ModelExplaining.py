@@ -144,7 +144,8 @@ T_kdd = test_df.drop(['protocol_type',	'service','flag','level','attack_map','at
 Y_kdd = df['attack']
 C_kdd = test_df['attack']
 # Load metatlearner model
-model = load_model('models/model_F.h5')
+filename = 'models/model_F.h5'
+model = pickle.load(open(filename, 'rb'))
 
 
 
