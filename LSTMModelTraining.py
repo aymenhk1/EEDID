@@ -197,26 +197,27 @@ print(trainX.shape, testT.shape)
 makedirs('models')
 
 
-
 # fit LSTM model on dataset
+
 # LSTM - 1 
 batch_size = 32
 model = Sequential()
 model.add(LSTM(32,input_dim=38, return_sequences=True))  # try using a GRU instead, for fun
-model.add(BatchNormalization())
+model.add(Dropout(0.1))
 model.add(LSTM(32,input_dim=38, return_sequences=False))  # try using a GRU instead, for fun
-model.add(BatchNormalization())
 model.add(Dropout(0.1))
 model.add(Dense(5))
 model.add(Activation('softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-# fit model
-model.fit(X_train, y_train, verbose=0, batch_size=batch_size, epochs=50)
+
+# try using different optimizers and different optimizer configs
+model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+checkpointer = callbacks.ModelCheckpoint(filepath="kddresults/lstm2layer/checkpoint-{epoch:02d}.hdf5", verbose=1, save_best_only=True,monitor='val_acc',mode='max')
+csv_logger = CSVLogger('training_set_iranalysis1.csv',separator=',', append=False)
+model.fit(X_train, y_train, batch_size=batch_size, epochs=10, validation_data=(X_test, y_test))
 filename = 'models/model_1.h5'
 # fit and save model
 model.save(filename)
 print('>Saved %s' % filename)
-
 
 # LSTM - 2
 batch_size = 32
@@ -228,11 +229,14 @@ model.add(BatchNormalization())
 model.add(Dropout(0.1))
 model.add(Dense(5))
 model.add(Activation('softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-# fit model
-model.fit(X_train, y_train, verbose=0, batch_size=batch_size, epochs=100)
-# fit and save model
+
+# try using different optimizers and different optimizer configs
+model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+checkpointer = callbacks.ModelCheckpoint(filepath="kddresults/lstm2layer/checkpoint-{epoch:02d}.hdf5", verbose=1, save_best_only=True,monitor='val_acc',mode='max')
+csv_logger = CSVLogger('training_set_iranalysis1.csv',separator=',', append=False)
+model.fit(X_train, y_train, batch_size=batch_size, epochs=50, validation_data=(X_test, y_test))
 filename = 'models/model_2.h5'
+# fit and save model
 model.save(filename)
 print('>Saved %s' % filename)
 
@@ -246,12 +250,18 @@ model.add(BatchNormalization())
 model.add(Dropout(0.1))
 model.add(Dense(5))
 model.add(Activation('softmax'))
-model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-# fit model
-model.fit(X_train, y_train, verbose=0, batch_size=batch_size, epochs=100)
-# fit and save model
+
+# try using different optimizers and different optimizer configs
+model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
+checkpointer = callbacks.ModelCheckpoint(filepath="kddresults/lstm2layer/checkpoint-{epoch:02d}.hdf5", verbose=1, save_best_only=True,monitor='val_acc',mode='max')
+csv_logger = CSVLogger('training_set_iranalysis1.csv',separator=',', append=False)
+model.fit(X_train, y_train, batch_size=batch_size, epochs=100, validation_data=(X_test, y_test))
 filename = 'models/model_3.h5'
+# fit and save model
 model.save(filename)
 print('>Saved %s' % filename)
+
+
+
 
 
