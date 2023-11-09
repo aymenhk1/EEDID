@@ -14,6 +14,7 @@ from keras.utils import to_categorical
 from numpy import dstack
 import numpy as np 
 import pandas as pd 
+import pickle
 from keras.layers import Dense, Dropout, Activation, Embedding
 from keras.layers import LSTM, SimpleRNN, GRU
 from keras.datasets import imdb
@@ -209,6 +210,11 @@ y_test1 = np.array(C_kdd)
 y_train= to_categorical(y_train1)
 y_test= to_categorical(y_test1)
 
+# reshape data
+X_train = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
+X_test = np.reshape(testT, (testT.shape[0], 1, testT.shape[1]))
+
+
 # load all models
 n_members = 3
 members = load_all_models(n_members)
@@ -218,14 +224,17 @@ print('Loaded %d models' % len(members))
 for model in members:
  y_test1 = np.array(C_kdd)
  y_test= to_categorical(y_test1)
- _, acc = model.evaluate(testT, y_test, verbose=0)
+ _, acc = model.evaluate(X_test, y_test, verbose=0)
  print('Model Accuracy: %.3f' % acc)
 # fit stacked model using the ensemble
-model = fit_stacked_model(members, testT, y_test1)
+model = fit_stacked_model(members, X_test, y_test1)
 filename = 'models/model_F.h5'
-model.save(filename)
+pickle.dump(model, open(filename, 'wb'))
 print('>Saved %s' % filename)
 # evaluate model on test set
-yhat = stacked_prediction(members, model, testT)
+yhat = stacked_prediction(members, model, X_test)
 acc = accuracy_score(y_test1, yhat)
 print('Stacked Test Accuracy: %.3f' % acc)
+print('Precision: %.3f' % precision_score(y_test1, yhat,average='macro'))
+print('Recall: %.3f' % recall_score(y_test1, yhat,average='macro'))
+print('F1 Score: %.3f' % f1_score(y_test1, yhat,average='macro'))
