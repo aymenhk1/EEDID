@@ -23,7 +23,7 @@ from keras.layers import BatchNormalization
 from os import makedirs
 import numpy as np 
 import pandas as pd 
-from keras.layers import Dense, Dropout, Activation, Embedding
+from keras.layers import Dense, Dropout, Activation, Embedding, Flatten
 from keras.layers import LSTM, SimpleRNN, GRU
 from keras.datasets import imdb
 from keras.utils.np_utils import to_categorical
@@ -157,12 +157,21 @@ df.head()
 df['attack'] = df['attack_map']
 test_df['attack'] = test_df['attack_map']
 
-X_kdd = df.drop(['protocol_type',	'service','flag','level','attack_map','attack'],axis=1)
-T_kdd = test_df.drop(['protocol_type',	'service','flag','level','attack_map','attack'],axis=1)
+X_kdd = df.drop(['level','attack_map','attack'],axis=1)
+T_kdd = test_df.drop(['level','attack_map','attack'],axis=1)
 
 # create our target classifications
 Y_kdd = df['attack']
 C_kdd = test_df['attack']
+
+
+# one-hot-encoding categorical columns
+X_kdd = pd.get_dummies(X_kdd,columns=['protocol_type','service','flag'],prefix="",prefix_sep="")  
+print(X_kdd.shape)
+
+T_kdd = pd.get_dummies(T_kdd,columns=['protocol_type','service','flag'],prefix="",prefix_sep="")  
+print(T_kdd.shape)
+
 
 
 # Pre-process data
@@ -186,12 +195,14 @@ y_train= to_categorical(y_train1)
 y_test= to_categorical(y_test1)
 
 
+X_train, X_test, y_train, y_test = train_test_split(trainX,y_train, test_size=0.20, random_state=42)
+
 # reshape data
-X_train = np.reshape(trainX, (trainX.shape[0], 1, trainX.shape[1]))
-X_test = np.reshape(testT, (testT.shape[0], 1, testT.shape[1]))
+X_train = np.reshape(X_train, (X_train.shape[0], 1, X_train.shape[1]))
+X_test = np.reshape(X_test, (X_test.shape[0], 1, X_test.shape[1]))
 
 
-print(trainX.shape, testT.shape)
+print(X_train.shape, X_test.shape)
 
 # create directory 
 makedirs('models')
@@ -199,16 +210,16 @@ makedirs('models')
 
 # fit LSTM model on dataset
 
-# LSTM - 1 
+# LSTM - 1
 batch_size = 32
 model = Sequential()
-model.add(LSTM(32,input_dim=38, return_sequences=True))  # try using a GRU instead, for fun
-model.add(Dropout(0.1))
-model.add(LSTM(32,input_dim=38, return_sequences=False))  # try using a GRU instead, for fun
-model.add(Dropout(0.1))
-model.add(Dense(5))
-model.add(Activation('softmax'))
+model.add(LSTM(32, return_sequences=True, input_shape=(1,X_train.shape[2])))  # try using a GRU instead, for fun,
+model.add(Dropout(0.2))
+model.add(Flatten())
+model.add(Dense(50))
+model.add(Dense(units=5,activation='softmax'))
 
+model.summary()
 # try using different optimizers and different optimizer configs
 model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
 checkpointer = callbacks.ModelCheckpoint(filepath="kddresults/lstm2layer/checkpoint-{epoch:02d}.hdf5", verbose=1, save_best_only=True,monitor='val_acc',mode='max')
@@ -219,17 +230,21 @@ filename = 'models/model_1.h5'
 model.save(filename)
 print('>Saved %s' % filename)
 
-# LSTM - 2
+
+# LSTM - 2 
 batch_size = 32
 model = Sequential()
-model.add(LSTM(64,input_dim=38, return_sequences=True))  # try using a GRU instead, for fun
+model.add(LSTM(64, return_sequences=True, input_shape=(1,X_train.shape[2])))  # try using a GRU instead, for fun,
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
-model.add(LSTM(64,input_dim=38, return_sequences=False))  # try using a GRU instead, for fun
+model.add(LSTM(64, return_sequences=True))  # try using a GRU instead, for fun
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
-model.add(Dropout(0.1))
-model.add(Dense(5))
-model.add(Activation('softmax'))
+model.add(Flatten())
+model.add(Dense(50))
+model.add(Dense(units=5,activation='softmax'))
 
+model.summary()
 # try using different optimizers and different optimizer configs
 model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
 checkpointer = callbacks.ModelCheckpoint(filepath="kddresults/lstm2layer/checkpoint-{epoch:02d}.hdf5", verbose=1, save_best_only=True,monitor='val_acc',mode='max')
@@ -240,17 +255,24 @@ filename = 'models/model_2.h5'
 model.save(filename)
 print('>Saved %s' % filename)
 
+
 # LSTM - 3
 batch_size = 32
 model = Sequential()
-model.add(LSTM(128,input_dim=38, return_sequences=True))  # try using a GRU instead, for fun
+model.add(LSTM(128, return_sequences=True, input_shape=(1,X_train.shape[2])))  # try using a GRU instead, for fun,
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
-model.add(LSTM(128,input_dim=38, return_sequences=False))  # try using a GRU instead, for fun
+model.add(LSTM(128, return_sequences=True))  # try using a GRU instead, for fun
+model.add(Dropout(0.2))
 model.add(BatchNormalization())
-model.add(Dropout(0.1))
-model.add(Dense(5))
-model.add(Activation('softmax'))
+model.add(LSTM(128, return_sequences=True))  # try using a GRU instead, for fun
+model.add(Dropout(0.2))
+model.add(BatchNormalization())
+model.add(Flatten())
+model.add(Dense(50))
+model.add(Dense(units=5,activation='softmax'))
 
+model.summary()
 # try using different optimizers and different optimizer configs
 model.compile(loss='categorical_crossentropy',optimizer='adam',metrics=['accuracy'])
 checkpointer = callbacks.ModelCheckpoint(filepath="kddresults/lstm2layer/checkpoint-{epoch:02d}.hdf5", verbose=1, save_best_only=True,monitor='val_acc',mode='max')
@@ -260,6 +282,10 @@ filename = 'models/model_3.h5'
 # fit and save model
 model.save(filename)
 print('>Saved %s' % filename)
+
+
+
+
 
 
 
